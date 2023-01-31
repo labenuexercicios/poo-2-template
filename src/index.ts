@@ -1,9 +1,10 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { TAccountDB, TAccountDBPost, TUserDB, TUserDBPost } from './types'
-import { db } from './database/knex'
+import { db } from './database/BaseDatabase'
 import { User } from './models/User'
 import { Account } from './models/Account'
+import { UserDatabase } from './database/UserDatabase'
 
 const app = express()
 
@@ -34,17 +35,20 @@ app.get("/ping", async (req: Request, res: Response) => {
 
 app.get("/users", async (req: Request, res: Response) => {
     try {
-        const q = req.query.q
+        const q = req.query.q as string | undefined
 
-        let usersDB
+        //let usersDB
 
-        if (q) {
-            const result: TUserDB[] = await db("users").where("name", "LIKE", `%${q}%`)
-            usersDB = result
-        } else {
-            const result: TUserDB[] = await db("users")
-            usersDB = result
-        }
+        // if (q) {
+        //     const result: TUserDB[] = await db("users").where("name", "LIKE", `%${q}%`)
+        //     usersDB = result
+        // } else {
+        //     const result: TUserDB[] = await db("users")
+        //     usersDB = result
+        // }
+
+        const usersDatabase = new UserDatabase()
+        const usersDB = await usersDatabase.findUsers(q)
 
         const users: User[] = usersDB.map((userDB) => new User(
             userDB.id,
@@ -55,6 +59,7 @@ app.get("/users", async (req: Request, res: Response) => {
         ))
 
         res.status(200).send(users)
+
     } catch (error) {
         console.log(error)
 
@@ -94,7 +99,9 @@ app.post("/users", async (req: Request, res: Response) => {
             throw new Error("'password' deve ser string")
         }
 
-        const [ userDBExists ]: TUserDB[] | undefined[] = await db("users").where({ id })
+        // const [ userDBExists ]: TUserDB[] | undefined[] = await db("users").where({ id })
+        const usersDatabase = new UserDatabase()
+        const userDBExists = await usersDatabase.findUserById(id)
 
         if (userDBExists) {
             res.status(400)
@@ -117,7 +124,8 @@ app.post("/users", async (req: Request, res: Response) => {
             created_at: newUser.getCreatedAt()
         }
 
-        await db("users").insert(newUserDB)
+        // await db("users").insert(newUserDB)
+        usersDatabase.insertUser(newUserDB)
 
         res.status(201).send(newUser)
     } catch (error) {

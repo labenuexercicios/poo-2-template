@@ -1,6 +1,9 @@
 import { knex } from "knex"
 
-export const db = knex({
+export abstract class BaseDatabase{ 
+    
+    
+    protected static connection = knex({
     client: "sqlite3",
     connection: {
         filename: "./src/database/poo.db",
@@ -13,4 +16,8 @@ export const db = knex({
             conn.run("PRAGMA foreign_keys = ON", cb)
         }
     }
-})
+})}
+
+//instanciar - não consigo pq é abstrato
+
+
